@@ -10,6 +10,7 @@ import (
 type User interface {
 	Create(ctx context.Context, entity entities.User) (err error)
 	FindByEmail(ctx context.Context, email string) (result entities.User, err error)
+	UpdateById(ctx context.Context, id string, entity *entities.User) (err error)
 }
 
 type user struct {
@@ -31,8 +32,17 @@ func (r *user) Create(ctx context.Context, entity entities.User) (err error) {
 
 func (r *user) FindByEmail(ctx context.Context, email string) (result entities.User, err error) {
 	err = r.db.WithContext(ctx).Where(&entities.User{Email: email}).First(&result).Error
-	if err == gorm.ErrRecordNotFound {
+	if err == gorm.ErrRecordNotFound { // * skip err record not found, checking data empty in service_impl
 		err = nil
+	}
+	return
+}
+
+func (r *user) UpdateById(ctx context.Context, id string, entity *entities.User) (err error) {
+	tx := r.db.WithContext(ctx).Where("id = ?", id).Updates(&entity)
+	err = tx.Error
+	if err == nil && tx.RowsAffected < 1 {
+		err = gorm.ErrRecordNotFound
 	}
 	return
 }

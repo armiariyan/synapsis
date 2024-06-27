@@ -55,7 +55,6 @@ func (s *service) Register(ctx context.Context, req RegisterRequest) (res consta
 	}
 
 	// * validate if user already registered
-	//TODO armia check if record not found
 	user, err := s.userRepository.FindByEmail(ctx, req.Email)
 	if err != nil {
 		log.Error(ctx, fmt.Sprintf("failed find user by email %s", req.Email), err)
@@ -100,19 +99,69 @@ func (s *service) Register(ctx context.Context, req RegisterRequest) (res consta
 	return
 }
 
-// func (s *service) FindAll(ctx context.Context, req FindAllRequest) (res FindAllResponse, err error) {
-// 	datas, err := s.userRepository.FindAll(ctx)
-// 	if err != nil {
-// 		log.Error(ctx, "failed to find all users", err)
-// 		return
-// 	}
-// 	res = FindAllResponse{
-// 		DefaultResponse: constants.DefaultResponse{
-// 			Status:  constants.STATUS_SUCCESS,
-// 			Message: constants.MESSAGE_SUCCESS,
-// 			Data:    datas,
-// 			Errors:  make([]string, 0),
-// 		},
-// 	}
-// 	return
-// }
+func (s *service) Login(ctx context.Context, req LoginRequest) (res constants.DefaultResponse, err error) {
+	// * validate user exist
+	userResult, err := s.userRepository.FindByEmail(ctx, req.Email)
+	if err != nil {
+		log.Error(ctx, fmt.Sprintf("failed to find user by email %s", req.Email), err)
+		err = fmt.Errorf("something went wrong [0]")
+		return
+	}
+
+	if userResult.ID == 0 {
+		log.Error(ctx, fmt.Sprintf("email %s is unregistered user", req.Email))
+		err = fmt.Errorf("invalid credentials")
+		return
+	}
+
+	// * validate correct password
+	if !utils.CheckPasswordHash(userResult.Password, req.Password) {
+		log.Error(ctx, fmt.Sprintf("invalid password for email %s", req.Email))
+		err = fmt.Errorf("invalid credentials")
+		return
+	}
+
+	// * use transaction normally there is more than 1 query in login
+	tx := s.db.Begin()
+	userRepository := repositories.NewUser(tx)
+
+	token, exp, err := utils.JwtSign(utils.JWTClaimsData{
+		ID:          userResult.UUID,
+		Email:       userResult.Email,
+		PhoneNumber: userResult.PhoneNumber,
+	})
+	if err != nil {
+		tx.Rollback()
+		log.Error(ctx, "failed to sign token", err)
+		err = fmt.Errorf("something went wrong [1]")
+		return
+	}
+
+	log.Info(ctx, fmt.Sprintf("[STARTING] update user %s token", userResult.Name))
+
+	err = userRepository.UpdateById(ctx, fmt.Sprint(userResult.ID), &entities.User{Token: token})
+	if err != nil {
+		tx.Rollback()
+		log.Error(ctx, fmt.Sprintf("[FAILED] update user %s token", userResult.Name), err)
+		err = fmt.Errorf("something went wrong [2]")
+		return
+	}
+
+	log.Info(ctx, fmt.Sprintf("[FINISHED] update user %s token", userResult.Name))
+	tx.Commit()
+
+	res = constants.DefaultResponse{
+		Status:  constants.STATUS_SUCCESS,
+		Message: constants.MESSAGE_SUCCESS,
+		Errors:  make([]string, 0),
+		Data: LoginResponse{
+			Name:        userResult.Name,
+			Email:       userResult.Email,
+			PhoneNumber: userResult.PhoneNumber,
+			AccessCode:  token,
+			ExpiredAt:   exp,
+		},
+	}
+
+	return
+}

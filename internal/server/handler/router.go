@@ -15,6 +15,7 @@ func SetupRouter(e *echo.Echo, cnt *container.Container) {
 		users := v1.Group("/users")
 		{
 			users.POST("/register", h.userHandler.Register)
+			users.POST("/login", h.userHandler.Login)
 		}
 	}
 }

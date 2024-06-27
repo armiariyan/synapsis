@@ -8,5 +8,5 @@ import (
 
 type Service interface {
 	Register(ctx context.Context, req RegisterRequest) (res constants.DefaultResponse, err error)
-	// FindAll(ctx context.Context, req FindAllRequest) (res FindAllResponse, err error)
+	Login(ctx context.Context, req LoginRequest) (res constants.DefaultResponse, err error)
 }

@@ -1,7 +1,5 @@
 package user
 
-import "github.com/armiariyan/synapsis/internal/pkg/constants"
-
 // * Requests
 type (
 	RegisterRequest struct {
@@ -12,17 +10,19 @@ type (
 		PasswordConfirmation string `json:"passwordConfirmation" validate:"required"`
 	}
 
-	FindAllRequest struct {
+	LoginRequest struct {
+		Email    string `json:"email" validate:"required,email"`
+		Password string `json:"password" validate:"required"`
 	}
 )
 
 // * Responses
 type (
-	CreateResponse struct {
-		constants.DefaultResponse
-	}
-
-	FindAllResponse struct {
-		constants.DefaultResponse
+	LoginResponse struct {
+		Name        string `json:"name"`
+		Email       string `json:"email"`
+		PhoneNumber string `json:"phoneNumber"`
+		AccessCode  string `json:"token"`
+		ExpiredAt   int64  `json:"expiredAt"`
 	}
 )
