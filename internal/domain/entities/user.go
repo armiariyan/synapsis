@@ -14,9 +14,9 @@ type User struct {
 	PhoneNumber string         `gorm:"column:phone_number;type:varchar(15);default:null" json:"phoneNumber"`
 	Password    string         `gorm:"column:password;type:varchar(255);not null" json:"-"`
 	Token       string         `gorm:"column:token;type:text;default:null" json:"-"`
-	CreatedAt   time.Time      `gorm:"column:created_at" json:"createdAt"`
-	UpdatedAt   time.Time      `gorm:"column:updated_at" json:"updatedAt"`
-	DeletedAt   gorm.DeletedAt `gorm:"column:deleted_at;index" json:"deletedAt"`
+	CreatedAt   time.Time      `gorm:"column:created_at;type:timestamp with time zone;default:current_timestamp" json:"createdAt"`
+	UpdatedAt   time.Time      `gorm:"column:updated_at;type:timestamp with time zone;default:current_timestamp" json:"updatedAt"`
+	DeletedAt   gorm.DeletedAt `gorm:"column:deleted_at;index;type:timestamp with time zone" json:"deletedAt"`
 
 	// * for relations
 }

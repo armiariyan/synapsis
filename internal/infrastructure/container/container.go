@@ -9,8 +9,11 @@ import (
 	"github.com/armiariyan/synapsis/internal/domain/entities"
 	"github.com/armiariyan/synapsis/internal/domain/repositories"
 	"github.com/armiariyan/synapsis/internal/infrastructure/postgresql"
+	"github.com/armiariyan/synapsis/internal/infrastructure/xendit"
 	"github.com/armiariyan/synapsis/internal/pkg/log"
+	"github.com/armiariyan/synapsis/internal/usecase/carts"
 	"github.com/armiariyan/synapsis/internal/usecase/healthcheck"
+	"github.com/armiariyan/synapsis/internal/usecase/products"
 	"github.com/armiariyan/synapsis/internal/usecase/user"
 	"gorm.io/gorm"
 )
@@ -22,6 +25,8 @@ type Container struct {
 	Logger             logger.Logger
 	HealthCheckService healthcheck.Service
 	UserService        user.Service
+	ProductService     products.Service
+	CartService        carts.Service
 }
 
 func (c *Container) Validate() *Container {
@@ -39,6 +44,12 @@ func (c *Container) Validate() *Container {
 	}
 	if c.UserService == nil {
 		panic("UserService is nil")
+	}
+	if c.ProductService == nil {
+		panic("ProductService is nil")
+	}
+	if c.CartService == nil {
+		panic("CartService is nil")
 	}
 	return c
 }
@@ -83,21 +94,44 @@ func New() *Container {
 	if config.GetString("env") == "development" {
 		postgresql.CreateUUIDExtension(synapsisDB)
 		synapsisDB.AutoMigrate(
+			entities.ProductCategory{},
+			entities.Product{},
 			entities.User{},
+			entities.Cart{},
 		)
 		// * for auto migrate feature
 	}
 
 	// * Repositories
 	userRepository := repositories.NewUser(synapsisDB)
+	productCategoryRepository := repositories.NewProductCategory(synapsisDB)
+	productRepository := repositories.NewProduct(synapsisDB)
+	cartRepository := repositories.NewCart(synapsisDB)
 
-	// * Wrapper other service
+	// * Wrapper
+	xenditWrapper := xendit.NewWrapper().Setup()
 
 	// * Services
 	healthCheckService := healthcheck.NewService().Validate()
 	userService := user.NewService().
 		SetDB(synapsisDB).
 		SetUserRepository(userRepository).
+		SetCartRepository(cartRepository).
+		SetXenditWrapper(xenditWrapper).
+		Validate()
+
+	productService := products.NewService().
+		SetDB(synapsisDB).
+		SetProductCategoryRepository(productCategoryRepository).
+		SetProductRepository(productRepository).
+		SetCartRepository(cartRepository).
+		Validate()
+
+	cartService := carts.NewService().
+		SetDB(synapsisDB).
+		SetProductCategoryRepository(productCategoryRepository).
+		SetProductRepository(productRepository).
+		SetCartRepository(cartRepository).
 		Validate()
 
 	// * Brokers
@@ -111,6 +145,8 @@ func New() *Container {
 		SynapsisDB:         synapsisDB,
 		HealthCheckService: healthCheckService,
 		UserService:        userService,
+		ProductService:     productService,
+		CartService:        cartService,
 	}
 	container.Validate()
 	return container

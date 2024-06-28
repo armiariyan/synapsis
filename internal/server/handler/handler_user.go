@@ -44,17 +44,29 @@ func (h *userHandler) Register(c echo.Context) (err error) {
 	return c.JSON(http.StatusOK, res)
 }
 
-// func (h *userHandler) FindAll(c echo.Context) (err error) {
-// 	ctx := c.Request().Context()
+func (h *userHandler) Login(c echo.Context) (err error) {
+	ctx := c.Request().Context()
 
-// 	var req user.FindAllRequest
-// 	if err = utils.Validate(c, &req); err != nil {
-// 		return
-// 	}
-// 	res, err := h.userService.FindAll(ctx, req)
-// 	if err != nil {
-// 		return
-// 	}
+	var req user.LoginRequest
+	if err = utils.Validate(c, &req); err != nil {
+		return
+	}
 
-// 	return c.JSON(http.StatusOK, res)
-// }
+	res, err := h.userService.Login(ctx, req)
+	if err != nil {
+		return
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h *userHandler) Checkout(c echo.Context) (err error) {
+	ctx := c.Request().Context()
+
+	res, err := h.userService.Checkout(ctx)
+	if err != nil {
+		return
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
