@@ -42,11 +42,25 @@ func JwtSign(data any) (signedString string, exp int64, err error) {
 }
 
 func JwtVerify(token string) (claims *Claims, err error) {
-	secret := []byte(config.GetString("jwt"))
+	secret := []byte(config.GetString("jwt.secret"))
 	claims = &Claims{}
 	_, err = jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (interface{}, error) {
 		return secret, nil
 	})
+	if err != nil {
+		return
+	}
+	decryptedString, err := DecryptAES256CBC(claims.Data.(string), config.GetString("aes256cbc.encrypt.key"), config.GetString("aes256cbc.encrypt.iv")) // * should be string
+	if err != nil {
+		return
+	}
+	var data JWTClaimsData
+	err = json.Unmarshal([]byte(decryptedString), &data)
+	if err != nil {
+		return
+	}
+
+	claims.Data = data
 
 	return
 }

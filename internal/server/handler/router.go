@@ -17,5 +17,17 @@ func SetupRouter(e *echo.Echo, cnt *container.Container) {
 			users.POST("/register", h.userHandler.Register)
 			users.POST("/login", h.userHandler.Login)
 		}
+
+		products := v1.Group("/products", h.Authentication)
+		{
+			products.GET("", h.productHandler.FindAllProductsByCategory)
+			products.POST("/add-to-cart", h.productHandler.AddToCart)
+		}
+
+		carts := v1.Group("/carts", h.Authentication)
+		{
+			carts.GET("", h.cartHandler.FindAll)
+			carts.DELETE("/:uuid", h.cartHandler.DeleteProductFromCarts)
+		}
 	}
 }

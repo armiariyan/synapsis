@@ -11,6 +11,7 @@ type User interface {
 	Create(ctx context.Context, entity entities.User) (err error)
 	FindByEmail(ctx context.Context, email string) (result entities.User, err error)
 	UpdateById(ctx context.Context, id string, entity *entities.User) (err error)
+	FindByUUID(ctx context.Context, uuid string) (result entities.User, err error)
 }
 
 type user struct {
@@ -44,5 +45,10 @@ func (r *user) UpdateById(ctx context.Context, id string, entity *entities.User)
 	if err == nil && tx.RowsAffected < 1 {
 		err = gorm.ErrRecordNotFound
 	}
+	return
+}
+
+func (r *user) FindByUUID(ctx context.Context, uuid string) (result entities.User, err error) {
+	err = r.db.WithContext(ctx).Where("uuid = ?", uuid).First(&result).Error
 	return
 }

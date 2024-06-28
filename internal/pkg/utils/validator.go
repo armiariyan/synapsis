@@ -1,11 +1,13 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 
 	"github.com/armiariyan/synapsis/internal/pkg/log"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
@@ -77,6 +79,16 @@ func castedValidate(valErr validator.ValidationErrors) (err error) {
 		default:
 			err = fmt.Errorf("%s is not valid", v.Field())
 		}
+	}
+	return
+}
+
+func ValidateUUID(ctx context.Context, u string) (err error) {
+	_, err = uuid.Parse(u)
+	if err != nil {
+		log.Error(ctx, "failed to parse uuid", err)
+		err = fmt.Errorf("invalid uuid")
+		return
 	}
 	return
 }
