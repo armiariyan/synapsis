@@ -43,16 +43,14 @@ This is the backend for an example MVP online store application built with Go
 1. Currently for example data in database, i manually use queries insert after the database and table has been created
 2. The (optional) insert queries that i used:
     ```
-    insert into product_categories (uuid, name)
-values
+    insert into product_categories (uuid, name) values
     ('c54d278f-deec-4285-bb3a-c5cd95437099', 'electronics'),
     ('d7a271ee-bcbb-4d6d-a6fe-c4d0672304ef', 'books');
-insert into products (uuid, name, category_id, price)
-values
+    insert into products (uuid, name, category_id, price) values
     ('401cfe92-eb8e-4326-a946-7707246061df', 'Iphone 15 Pro Max', 'c54d278f-deec-4285-bb3a-c5cd95437099', 10000000),
     ('9997e5dc-fcbe-49f4-89f2-5784ee2e8b71', 'Cosmos Wadesdes Fan', 'c54d278f-deec-4285-bb3a-c5cd95437099', 100000),
-        ('5db2b2e0-dcc0-40e3-8720-315d06bdd464', 'Macbook M1 Pro', 'c54d278f-deec-4285-bb3a-c5cd95437099', 11000000),
-        ('77c4514c-55f3-4209-8caa-3bc6dee0cabf', 'Book of Kedebook', 'd7a271ee-bcbb-4d6d-a6fe-c4d0672304ef', 150000),
+    ('5db2b2e0-dcc0-40e3-8720-315d06bdd464', 'Macbook M1 Pro', 'c54d278f-deec-4285-bb3a-c5cd95437099', 11000000),
+    ('77c4514c-55f3-4209-8caa-3bc6dee0cabf', 'Book of Kedebook', 'd7a271ee-bcbb-4d6d-a6fe-c4d0672304ef', 150000),
     ('59e039c8-590a-411c-b362-377ccdf12be4', 'Bumi Manusia', 'd7a271ee-bcbb-4d6d-a6fe-c4d0672304ef', 100000);
     ```
 
