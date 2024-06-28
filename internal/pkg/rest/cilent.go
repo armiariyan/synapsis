@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/armiariyan/logger"
 	"github.com/armiariyan/rest"
@@ -62,7 +63,22 @@ func (r restLogger) BeforeRequest(ctx context.Context, data rest.HookData) {
 
 	method := data.Request.Method
 
-	log.T2(ctx, fmt.Sprintf("%s [Request]", method), data.URL, data.Request.Header, data.Request.Body)
+	// * list of paths that need to skip data.Request.Body
+	skipBodyPaths := []string{}
+
+	skipBody := false
+	for _, path := range skipBodyPaths {
+		if strings.Contains(data.URL, path) {
+			skipBody = true
+			break
+		}
+	}
+
+	if skipBody {
+		log.T2(ctx, fmt.Sprintf("%s [Request]", method), data.URL, data.Request.Header, struct{}{})
+	} else {
+		log.T2(ctx, fmt.Sprintf("%s [Request]", method), data.URL, data.Request.Header, data.Request.Body)
+	}
 
 }
 

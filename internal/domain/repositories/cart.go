@@ -14,6 +14,7 @@ type Cart interface {
 	Create(ctx context.Context, entity entities.Cart) (err error)
 	UpdateById(ctx context.Context, id string, entity *entities.Cart) (err error)
 	FindByUUID(ctx context.Context, uuid string) (result entities.Cart, err error)
+	FindAll(ctx context.Context, conds ...utils.DBCond) (result []entities.Cart, err error)
 	FindAllAndCount(ctx context.Context, pagination constants.PaginationRequest, conds ...utils.DBCond) (result []entities.Cart, count int64, err error)
 	DeleteByUUID(ctx context.Context, uuid string) (err error)
 }
@@ -47,6 +48,13 @@ func (r *cart) UpdateById(ctx context.Context, id string, entity *entities.Cart)
 func (r *cart) FindByUUID(ctx context.Context, uuid string) (result entities.Cart, err error) {
 	err = r.db.WithContext(ctx).Where("uuid = ?", uuid).First(&result).Error
 	return
+}
+
+func (r *cart) FindAll(ctx context.Context, conds ...utils.DBCond) (result []entities.Cart, err error) {
+	queryPayload := r.db.WithContext(ctx)
+	err = utils.CompileConds(queryPayload, conds...).Find(&result).Error
+	return
+
 }
 
 func (r *cart) FindAllAndCount(ctx context.Context, pagination constants.PaginationRequest, conds ...utils.DBCond) (result []entities.Cart, count int64, err error) {

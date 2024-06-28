@@ -6,6 +6,7 @@ import (
 
 	"github.com/armiariyan/synapsis/internal/domain/entities"
 	"github.com/armiariyan/synapsis/internal/domain/repositories"
+	"github.com/armiariyan/synapsis/internal/infrastructure/xendit"
 	"github.com/armiariyan/synapsis/internal/pkg/constants"
 	"github.com/armiariyan/synapsis/internal/pkg/log"
 	"github.com/armiariyan/synapsis/internal/pkg/utils"
@@ -15,6 +16,8 @@ import (
 type service struct {
 	db             *gorm.DB
 	userRepository repositories.User
+	cartRepository repositories.Cart
+	xenditWrapper  xendit.Wrapper
 }
 
 func NewService() *service {
@@ -30,13 +33,26 @@ func (s *service) SetUserRepository(repository repositories.User) *service {
 	s.userRepository = repository
 	return s
 }
-
+func (s *service) SetCartRepository(repository repositories.Cart) *service {
+	s.cartRepository = repository
+	return s
+}
+func (s *service) SetXenditWrapper(wrapper xendit.Wrapper) *service {
+	s.xenditWrapper = wrapper
+	return s
+}
 func (s *service) Validate() Service {
 	if s.db == nil {
 		panic("db is nil")
 	}
 	if s.userRepository == nil {
 		panic("userRepository is nil")
+	}
+	if s.cartRepository == nil {
+		panic("cartRepository is nil")
+	}
+	if s.xenditWrapper == nil {
+		panic("xenditWrapper is nil")
 	}
 	return s
 }
@@ -160,6 +176,66 @@ func (s *service) Login(ctx context.Context, req LoginRequest) (res constants.De
 			PhoneNumber: userResult.PhoneNumber,
 			AccessCode:  token,
 			ExpiredAt:   exp,
+		},
+	}
+
+	return
+}
+
+func (s *service) Checkout(ctx context.Context) (res constants.DefaultResponse, err error) {
+	userData, _ := ctx.Value(string("user")).(entities.User)
+
+	// * get user carts
+	carts, err := s.cartRepository.FindAll(ctx,
+		utils.DBCond{Where: "user_id = ?", WhereArgs: userData.UUID},
+		utils.DBCond{Joins: "User"},
+		utils.DBCond{Preload: "Product", PreloadArgs: []utils.DBCond{{Joins: "ProductCategory"}}},
+	)
+	if err != nil {
+		log.Error(ctx, fmt.Sprintf("failed to find all carts for user %s during checkout", userData.Name), err)
+		err = fmt.Errorf("something went wrong")
+		return
+	}
+
+	// * hit Xendit to create invoice
+	var items []xendit.ItemInvoice
+	var totalAmount int
+	for i, cart := range carts {
+		item := xendit.ItemInvoice{
+			Name:     cart.Product.Name,
+			Price:    int(cart.Product.Price),
+			Quantity: int(cart.Amount),
+			Category: cart.Product.ProductCategory.Name,
+			URL:      fmt.Sprintf("example-url.com/items/%d", i),
+		}
+
+		items = append(items, item)
+		totalPerItem := item.Price * item.Quantity
+
+		totalAmount += totalPerItem
+	}
+
+	invoiceCode, _ := utils.GenerateRandomString(5)
+	invoiceReq := xendit.CreateInvoiceRequest{
+		ExternalID: fmt.Sprintf("SYNAPSIS-INV-%s", invoiceCode),
+		Amount:     totalAmount,
+		Items:      items,
+	}
+
+	resp, err := s.xenditWrapper.CreateInvoice(ctx, invoiceReq)
+	if err != nil {
+		log.Error(ctx, "failed to create invoice to xendit", err, invoiceReq)
+		err = fmt.Errorf("something went wrong")
+		return
+	}
+
+	res = constants.DefaultResponse{
+		Status:  constants.STATUS_SUCCESS,
+		Message: constants.MESSAGE_SUCCESS,
+		Errors:  make([]string, 0),
+		Data: CheckoutResponse{
+			InvoiceID:  resp.ExternalID,
+			InvoiceURL: resp.InvoiceURL,
 		},
 	}
 

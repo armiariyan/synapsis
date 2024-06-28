@@ -9,6 +9,7 @@ import (
 	"github.com/armiariyan/synapsis/internal/domain/entities"
 	"github.com/armiariyan/synapsis/internal/domain/repositories"
 	"github.com/armiariyan/synapsis/internal/infrastructure/postgresql"
+	"github.com/armiariyan/synapsis/internal/infrastructure/xendit"
 	"github.com/armiariyan/synapsis/internal/pkg/log"
 	"github.com/armiariyan/synapsis/internal/usecase/carts"
 	"github.com/armiariyan/synapsis/internal/usecase/healthcheck"
@@ -108,13 +109,17 @@ func New() *Container {
 	cartRepository := repositories.NewCart(synapsisDB)
 
 	// * Wrapper
+	xenditWrapper := xendit.NewWrapper().Setup()
 
 	// * Services
 	healthCheckService := healthcheck.NewService().Validate()
 	userService := user.NewService().
 		SetDB(synapsisDB).
 		SetUserRepository(userRepository).
+		SetCartRepository(cartRepository).
+		SetXenditWrapper(xenditWrapper).
 		Validate()
+
 	productService := products.NewService().
 		SetDB(synapsisDB).
 		SetProductCategoryRepository(productCategoryRepository).

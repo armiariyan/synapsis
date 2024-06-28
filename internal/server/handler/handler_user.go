@@ -59,3 +59,14 @@ func (h *userHandler) Login(c echo.Context) (err error) {
 
 	return c.JSON(http.StatusOK, res)
 }
+
+func (h *userHandler) Checkout(c echo.Context) (err error) {
+	ctx := c.Request().Context()
+
+	res, err := h.userService.Checkout(ctx)
+	if err != nil {
+		return
+	}
+
+	return c.JSON(http.StatusOK, res)
+}

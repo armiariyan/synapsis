@@ -9,4 +9,5 @@ import (
 type Service interface {
 	Register(ctx context.Context, req RegisterRequest) (res constants.DefaultResponse, err error)
 	Login(ctx context.Context, req LoginRequest) (res constants.DefaultResponse, err error)
+	Checkout(ctx context.Context) (res constants.DefaultResponse, err error)
 }

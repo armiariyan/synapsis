@@ -25,4 +25,9 @@ type (
 		AccessCode  string `json:"token"`
 		ExpiredAt   int64  `json:"expiredAt"`
 	}
+
+	CheckoutResponse struct {
+		InvoiceID  string `json:"invoiceId"`
+		InvoiceURL string `json:"invoiceUrl"`
+	}
 )

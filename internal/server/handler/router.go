@@ -16,6 +16,8 @@ func SetupRouter(e *echo.Echo, cnt *container.Container) {
 		{
 			users.POST("/register", h.userHandler.Register)
 			users.POST("/login", h.userHandler.Login)
+			users.POST("/checkout", h.userHandler.Checkout, h.Authentication)
+
 		}
 
 		products := v1.Group("/products", h.Authentication)
